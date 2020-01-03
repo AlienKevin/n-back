@@ -8,7 +8,8 @@ import Element.Font as Font
 import Element.Border as Border
 import Html exposing (Html)
 import Random
-
+import Time
+import Delay
 
 
 -- MAIN
@@ -28,14 +29,17 @@ main =
 
 
 type alias Model =
-    { letter : Char
+    { letter :  Char
+    , paused : Bool
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model 'B'
-    , Cmd.none
+    ({ letter = 'B'
+    , paused = False
+    }
+    , Delay.after 500 Delay.Millisecond Pause
     )
 
 
@@ -44,22 +48,34 @@ init _ =
 
 
 type Msg
-    = NextLetter
+    = NextLetter Time.Posix
     | NewLetter Char
+    | Pause
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NextLetter ->
-            ( model
+        NextLetter _ ->
+            ( { model |
+                paused = False
+            }
             , Random.generate NewLetter
                 (Random.uniform 'B' [ 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z'])
             )
 
-        NewLetter newLetter ->
-            ( Model newLetter
+        Pause ->
+            ( { model |
+                paused = True
+                }
             , Cmd.none
+            )
+
+        NewLetter newLetter ->
+            ( { model |
+                letter = newLetter
+                }
+            , Delay.after 500 Delay.Millisecond Pause
             )
 
 
@@ -69,7 +85,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    Time.every 2500 NextLetter
 
 
 
@@ -100,7 +116,12 @@ view model =
                 [ Font.size 100
                 , E.centerX
                 ] <|
-                E.text (String.fromChar model.letter)
+                E.text (
+                    if model.paused then
+                        " "
+                    else
+                        String.fromChar model.letter
+                )
             , Input.button
                 [ Background.color theme.light
                 , E.mouseOver
@@ -109,6 +130,6 @@ view model =
                 , Border.rounded 10
                 ]
                 { label = E.text "Next Letter"
-                , onPress = Just NextLetter
+                , onPress = Nothing
                 }
             ]
