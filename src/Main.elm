@@ -91,7 +91,7 @@ update msg model =
                 newHistory =
                     nextHistory model newLetter
                 newTotalCorrects =
-                    nextTotalCorrects model newHistory
+                    nextTotalCorrects model model.history
                 _ = Debug.log "model" { model |
                     letter = newLetter
                     , index = newIndex
@@ -146,7 +146,7 @@ nextLetter model =
 
 nextTotalCorrects : Model -> List Char -> Int
 nextTotalCorrects model history =
-    if isCorrect history then
+    if isCorrect history model.n then
         model.totalCorrects + 1
     else
         model.totalCorrects
@@ -154,19 +154,20 @@ nextTotalCorrects model history =
 
 nextCorrects : Model -> Int
 nextCorrects model =
-    if isCorrect model.history then
+    if isCorrect model.history model.n then
         model.corrects + 1
     else
-        if model.corrects > 0 then
+        if model.corrects > 0 && List.length model.history > model.n then
             model.corrects - 1
         else
             model.corrects
 
 
-isCorrect : List Char -> Bool
-isCorrect history =
+isCorrect : List Char -> Int -> Bool
+isCorrect history n =
     List.head history
         == (List.head <| List.reverse history)
+    && List.length history == n + 1
 
 
 nextHistory : Model -> Char -> List Char
@@ -210,9 +211,10 @@ keyToMessage string =
 -- VIEW
 
 
-theme : { dark : E.Color, darker : E.Color, light : E.Color, text : E.Color }
+theme : { dark : E.Color, darker : E.Color, light : E.Color, grey : E.Color, text : E.Color }
 theme =
     { light = E.rgb255 102 121 217
+    , grey = E.rgb255 196 196 196
     , dark = E.rgb255 20 69 125
     , darker = E.rgb255 50 58 106
     , text = E.rgb255 255 255 255
@@ -241,16 +243,33 @@ view model =
                     else
                         String.fromChar model.letter
                 )
-            , Input.button
-                [ Background.color theme.light
+            , let
+                disabled =
+                    List.length model.history <= model.n
+            in
+            Input.button
+                [ Background.color <|
+                    if disabled then
+                        theme.grey
+                    else
+                        theme.light
                 , E.mouseOver
-                    [ Background.color theme.dark ]
+                    [ Background.color <|
+                        if disabled then
+                            theme.grey
+                        else
+                            theme.dark
+                        ]
                 , E.padding 10
                 , Border.rounded 10
                 , E.centerY
                 ]
                 { label = E.text "Is Target"
-                , onPress = Just ConfirmTarget
+                , onPress =
+                    if disabled then
+                        Nothing
+                    else
+                        Just ConfirmTarget
                 }
             , E.column
                 [ E.centerX
