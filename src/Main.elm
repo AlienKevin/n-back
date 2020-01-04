@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Browser
+import Browser.Events
 import Element as E
 import Element.Input as Input
 import Element.Background as Background
@@ -10,7 +11,7 @@ import Html exposing (Html)
 import Random
 import Time
 import Delay
-
+import Json.Decode as Decode
 
 -- MAIN
 
@@ -31,6 +32,10 @@ main =
 type alias Model =
     { letter :  Char
     , paused : Bool
+    , index : Int
+    , history : List Char
+    , corrects : Int
+    , n : Int
     }
 
 
@@ -38,6 +43,10 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ({ letter = 'B'
     , paused = False
+    , index = 1
+    , corrects = 0
+    , history = [ 'B' ]
+    , n = 2
     }
     , Delay.after 500 Delay.Millisecond Pause
     )
@@ -51,18 +60,20 @@ type Msg
     = NextLetter Time.Posix
     | NewLetter Char
     | Pause
+    | ConfirmTarget
+    | IgnoreMessage
+
+
+letters : List Char
+letters =
+    ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z']
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NextLetter _ ->
-            ( { model |
-                paused = False
-            }
-            , Random.generate NewLetter
-                (Random.uniform 'B' [ 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z'])
-            )
+            nextLetter model
 
         Pause ->
             ( { model |
@@ -74,10 +85,61 @@ update msg model =
         NewLetter newLetter ->
             ( { model |
                 letter = newLetter
+                , index = model.index + 1
+                , history = newHistory model newLetter
                 }
             , Delay.after 500 Delay.Millisecond Pause
             )
 
+        ConfirmTarget ->
+            ( { model |
+                corrects = newCorrects model
+                }
+            , Cmd.none
+            )
+
+        IgnoreMessage ->
+            ( model, Cmd.none )
+
+
+nextLetter : Model -> (Model, Cmd Msg)
+nextLetter model =
+    let
+        _ =
+            Debug.log "model" model
+        total =
+            List.length letters
+        nBackLetter =
+            Maybe.withDefault ' ' <| List.head model.history
+        rests =
+            List.filter (\letter -> letter /= nBackLetter) letters
+    in
+    ( { model |
+        paused = False
+    }
+    , Random.generate NewLetter
+        (Random.weighted
+            (toFloat (total - 1) / 2, nBackLetter)
+            (List.map (\letter -> (1, letter)) rests)
+        )
+    )
+
+
+newCorrects : Model -> Int
+newCorrects model =
+    if List.head model.history
+        == (List.head <| List.reverse model.history) then
+        model.corrects + 1
+    else
+        model.corrects
+
+
+newHistory : Model -> Char -> List Char
+newHistory model newLetter =
+    if List.length model.history <= model.n then
+        model.history ++ [ newLetter ]
+    else
+        (Maybe.withDefault [] <| List.tail model.history) ++ [ newLetter ]
 
 
 -- SUBSCRIPTIONS
@@ -85,7 +147,28 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Time.every 2500 NextLetter
+    Sub.batch
+        [ Time.every 2500 NextLetter
+        , Browser.Events.onKeyDown keyDecoder
+        ]
+
+
+keyDecoder : Decode.Decoder Msg
+keyDecoder =
+    Decode.map keyToMessage <| Decode.field "key" Decode.string
+
+
+keyToMessage : String -> Msg
+keyToMessage string =
+    case String.uncons string of
+        Just ( char, "" ) ->
+            case char of
+                ' ' ->
+                    ConfirmTarget
+                _ ->
+                    IgnoreMessage
+        _ ->
+            IgnoreMessage
 
 
 
@@ -108,13 +191,14 @@ view model =
         , E.padding 10
         ] <|
         E.column
-            [ E.spacing 10
+            [ E.spacing 20
             , E.centerX
-            , E.centerY
+            , E.height E.fill
             ]
             [ E.el
                 [ Font.size 100
                 , E.centerX
+                , E.centerY
                 ] <|
                 E.text (
                     if model.paused then
@@ -128,8 +212,16 @@ view model =
                     [ Background.color theme.dark ]
                 , E.padding 10
                 , Border.rounded 10
+                , E.centerY
                 ]
-                { label = E.text "Next Letter"
+                { label = E.text "Is Target"
                 , onPress = Nothing
                 }
+            , E.column
+                [ E.centerX
+                , E.alignBottom
+                ]
+                [ E.text <| "#" ++ String.fromInt model.index
+                , E.text <| "✔" ++ (String.fromInt <| round (toFloat model.corrects / toFloat model.index * 100)) ++ "%"
+                ]
             ]
