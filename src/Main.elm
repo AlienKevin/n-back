@@ -92,12 +92,6 @@ update msg model =
                     nextHistory model newLetter
                 newTotalCorrects =
                     nextTotalCorrects model model.history
-                _ = Debug.log "model" { model |
-                    letter = newLetter
-                    , index = newIndex
-                    , history = newHistory
-                    , totalCorrects = newTotalCorrects
-                    }
             in
             ( { model |
                 letter = newLetter
@@ -129,7 +123,6 @@ nextLetter model =
                 List.head <|
                     Maybe.withDefault [] <|
                         List.tail model.history
-        _ = Debug.log "nBackLetter" nBackLetter
         rests =
             List.filter (\letter -> letter /= nBackLetter) letters
     in
