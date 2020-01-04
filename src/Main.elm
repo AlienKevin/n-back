@@ -8,6 +8,7 @@ import Element.Background as Background
 import Element.Font as Font
 import Element.Border as Border
 import Html exposing (Html)
+import Html.Attributes
 import Random
 import Time
 import Delay
@@ -37,6 +38,7 @@ type alias Model =
     , corrects : Int
     , totalCorrects : Int
     , n : Int
+    , bg : E.Color
     }
 
 
@@ -49,6 +51,7 @@ init _ =
     , totalCorrects = 1
     , history = [ 'B' ]
     , n = 2
+    , bg = theme.darker
     }
     , Delay.after 500 Delay.Millisecond Pause
     )
@@ -98,14 +101,13 @@ update msg model =
                 , index = newIndex
                 , history = newHistory
                 , totalCorrects = newTotalCorrects
+                , bg = theme.darker
                 }
             , Delay.after 500 Delay.Millisecond Pause
             )
 
         ConfirmTarget ->
-            ( { model |
-                corrects = nextCorrects model
-                }
+            ( updateCorrects model
             , Cmd.none
             )
 
@@ -145,15 +147,22 @@ nextTotalCorrects model history =
         model.totalCorrects
 
 
-nextCorrects : Model -> Int
-nextCorrects model =
+updateCorrects : Model -> Model
+updateCorrects model =
     if isCorrect model.history model.n then
-        model.corrects + 1
+        { model |
+            corrects = model.corrects + 1
+            , bg = theme.green
+        }
     else
-        if model.corrects > 0 && List.length model.history > model.n then
-            model.corrects - 1
-        else
-            model.corrects
+        { model |
+            corrects =
+                if model.corrects > 0 && List.length model.history > model.n then
+                    model.corrects - 1
+                else
+                    model.corrects
+            , bg = theme.red
+        }
 
 
 isCorrect : List Char -> Int -> Bool
@@ -204,12 +213,13 @@ keyToMessage string =
 -- VIEW
 
 
-theme : { dark : E.Color, darker : E.Color, light : E.Color, grey : E.Color, text : E.Color }
 theme =
     { light = E.rgb255 102 121 217
     , grey = E.rgb255 196 196 196
     , dark = E.rgb255 20 69 125
     , darker = E.rgb255 50 58 106
+    , green = E.rgb255 124 252 0
+    , red = E.rgb255 255 72 0
     , text = E.rgb255 255 255 255
     }
 
@@ -229,13 +239,20 @@ view model =
                 [ Font.size 100
                 , E.centerX
                 , E.centerY
+                , E.width <| E.px 200
+                , E.height <| E.px 200
+                , Background.color model.bg
                 ] <|
-                E.text (
-                    if model.paused then
-                        " "
-                    else
-                        String.fromChar model.letter
-                )
+                    E.el
+                    [ E.centerX
+                    , E.centerY
+                    ] <|
+                    E.text (
+                        if model.paused then
+                            " "
+                        else
+                            String.fromChar model.letter
+                    )
             , let
                 disabled =
                     List.length model.history <= model.n
@@ -256,6 +273,7 @@ view model =
                 , E.padding 10
                 , Border.rounded 10
                 , E.centerY
+                , E.centerX
                 ]
                 { label = E.text "Is Target"
                 , onPress =
