@@ -237,6 +237,7 @@ view model =
             ]
             [ E.el
                 [ Font.size 100
+                , Font.bold
                 , E.centerX
                 , E.centerY
                 , E.width <| E.px 200
