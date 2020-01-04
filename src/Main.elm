@@ -35,6 +35,7 @@ type alias Model =
     , index : Int
     , history : List Char
     , corrects : Int
+    , totalCorrects : Int
     , n : Int
     }
 
@@ -44,7 +45,8 @@ init _ =
     ({ letter = 'B'
     , paused = False
     , index = 1
-    , corrects = 0
+    , corrects = 1
+    , totalCorrects = 1
     , history = [ 'B' ]
     , n = 2
     }
@@ -83,17 +85,32 @@ update msg model =
             )
 
         NewLetter newLetter ->
+            let
+                newIndex =
+                    model.index + 1
+                newHistory =
+                    nextHistory model newLetter
+                newTotalCorrects =
+                    nextTotalCorrects model newHistory
+                _ = Debug.log "model" { model |
+                    letter = newLetter
+                    , index = newIndex
+                    , history = newHistory
+                    , totalCorrects = newTotalCorrects
+                    }
+            in
             ( { model |
                 letter = newLetter
-                , index = model.index + 1
-                , history = newHistory model newLetter
+                , index = newIndex
+                , history = newHistory
+                , totalCorrects = newTotalCorrects
                 }
             , Delay.after 500 Delay.Millisecond Pause
             )
 
         ConfirmTarget ->
             ( { model |
-                corrects = newCorrects model
+                corrects = nextCorrects model
                 }
             , Cmd.none
             )
@@ -105,12 +122,14 @@ update msg model =
 nextLetter : Model -> (Model, Cmd Msg)
 nextLetter model =
     let
-        _ =
-            Debug.log "model" model
         total =
             List.length letters
         nBackLetter =
-            Maybe.withDefault ' ' <| List.head model.history
+            Maybe.withDefault 'C' <|
+                List.head <|
+                    Maybe.withDefault [] <|
+                        List.tail model.history
+        _ = Debug.log "nBackLetter" nBackLetter
         rests =
             List.filter (\letter -> letter /= nBackLetter) letters
     in
@@ -125,17 +144,33 @@ nextLetter model =
     )
 
 
-newCorrects : Model -> Int
-newCorrects model =
-    if List.head model.history
-        == (List.head <| List.reverse model.history) then
+nextTotalCorrects : Model -> List Char -> Int
+nextTotalCorrects model history =
+    if isCorrect history then
+        model.totalCorrects + 1
+    else
+        model.totalCorrects
+
+
+nextCorrects : Model -> Int
+nextCorrects model =
+    if isCorrect model.history then
         model.corrects + 1
     else
-        model.corrects
+        if model.corrects > 0 then
+            model.corrects - 1
+        else
+            model.corrects
 
 
-newHistory : Model -> Char -> List Char
-newHistory model newLetter =
+isCorrect : List Char -> Bool
+isCorrect history =
+    List.head history
+        == (List.head <| List.reverse history)
+
+
+nextHistory : Model -> Char -> List Char
+nextHistory model newLetter =
     if List.length model.history <= model.n then
         model.history ++ [ newLetter ]
     else
@@ -215,13 +250,13 @@ view model =
                 , E.centerY
                 ]
                 { label = E.text "Is Target"
-                , onPress = Nothing
+                , onPress = Just ConfirmTarget
                 }
             , E.column
                 [ E.centerX
                 , E.alignBottom
                 ]
                 [ E.text <| "#" ++ String.fromInt model.index
-                , E.text <| "✔" ++ (String.fromInt <| round (toFloat model.corrects / toFloat model.index * 100)) ++ "%"
+                , E.text <| "✔" ++ (String.fromInt <| round (toFloat model.corrects / toFloat model.totalCorrects * 100)) ++ "%"
                 ]
             ]
