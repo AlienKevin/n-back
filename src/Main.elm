@@ -9,6 +9,7 @@ import Element.Font as Font
 import Element.Border as Border
 import Element.Events as Events
 import Html exposing (Html)
+import Html.Attributes
 import Random
 import Time
 import Delay
@@ -296,8 +297,10 @@ homeView model =
                 [ E.centerX
                 , E.centerY
                 , Font.center
+                , E.htmlAttribute (Html.Attributes.style "white-space" "pre")
                 ]
-                [ E.text "Your task is to remember if the current letter matches n letters before"
+                [ E.html <| Html.text "Your task is to remember if the current letter matches n letters before.\n"
+                , E.html <| Html.text "Press the \"Match\" button or the spacebar if you think it's a match."
                 ]
             , E.row
                 [ E.centerX
@@ -400,7 +403,7 @@ taskView model =
                 , E.centerY
                 , E.centerX
                 ]
-                { label = E.text "Is Target"
+                { label = E.text "Match"
                 , onPress =
                     if disabled then
                         Nothing
