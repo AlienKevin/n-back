@@ -353,20 +353,18 @@ taskView model =
     E.layout
         [ Background.color theme.darker
         , Font.color theme.text
-        , E.padding 10
+        , E.padding 20
         ] <|
         E.column
             [ E.spacing 20
             , E.centerX
-            , E.height E.fill
+            , E.centerY
             ]
             [ E.el
                 [ Font.size 100
                 , Font.bold
                 , E.centerX
                 , E.centerY
-                , E.width <| E.px 200
-                , E.height <| E.px 200
                 ] <|
                     E.el
                     [ E.centerX
@@ -410,16 +408,19 @@ taskView model =
                     else
                         Just ConfirmTarget
                 }
+            , E.el [ E.centerX ] <|
+                E.text <| String.fromInt model.n ++ "-back"
             , E.row
                 [ E.centerX
-                , E.spacing 20
+                , E.spacing 10
                 ]
                 [ E.el
                     [ Events.onClick <| ChangePage HomePage
                     , E.pointer
+                    , E.width <| E.px 40
                     ] <|
                     E.html (FeatherIcons.home |> FeatherIcons.toHtml [])
-                , E.text <| "#" ++ String.fromInt model.index
-                , E.text <| "✔" ++ (String.fromInt <| round (toFloat model.corrects / toFloat model.totalCorrects * 100)) ++ "%"
+                , E.el [ E.width <| E.px 40  ] <| E.text <| "#" ++ String.fromInt model.index
+                , E.el [ E.width <| E.px 40  ] <| E.text <| "✔" ++ (String.fromInt <| round (toFloat model.corrects / toFloat model.totalCorrects * 100)) ++ "%"
                 ]
             ]
