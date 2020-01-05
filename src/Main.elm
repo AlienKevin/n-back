@@ -57,7 +57,7 @@ init _ =
     , totalCorrects = 1
     , history = [ 'B' ]
     , n = 2
-    , bg = theme.darker
+    , bg = theme.light
     , page = HomePage
     }
     , Delay.after 500 Delay.Millisecond Pause
@@ -109,7 +109,7 @@ update msg model =
                 , index = newIndex
                 , history = newHistory
                 , totalCorrects = newTotalCorrects
-                , bg = theme.darker
+                , bg = theme.light
                 }
             , Delay.after 500 Delay.Millisecond Pause
             )
@@ -364,7 +364,6 @@ taskView model =
                 , E.centerY
                 , E.width <| E.px 200
                 , E.height <| E.px 200
-                , Background.color model.bg
                 ] <|
                     E.el
                     [ E.centerX
@@ -385,13 +384,16 @@ taskView model =
                     if disabled then
                         theme.grey
                     else
-                        theme.light
+                        model.bg
                 , E.mouseOver
                     [ Background.color <|
                         if disabled then
                             theme.grey
                         else
-                            theme.dark
+                            if model.bg == theme.light then
+                                    theme.dark
+                            else
+                                model.bg
                         ]
                 , E.padding 10
                 , Border.rounded 10
