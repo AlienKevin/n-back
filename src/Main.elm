@@ -214,11 +214,14 @@ nextHistory model newLetter =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.batch
-        [ Time.every 2500 NextLetter
-        , Browser.Events.onKeyDown keyDecoder
-        ]
+subscriptions model =
+    if model.page == HomePage then
+        Sub.none
+    else
+        Sub.batch
+            [ Time.every 2500 NextLetter
+            , Browser.Events.onKeyDown keyDecoder
+            ]
 
 
 keyDecoder : Decode.Decoder Msg
