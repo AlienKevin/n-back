@@ -297,7 +297,7 @@ homeView model =
                 [ E.centerX
                 , E.centerY
                 , Font.center
-                , E.htmlAttribute (Html.Attributes.style "white-space" "pre")
+                , E.htmlAttribute (Html.Attributes.style "white-space" "pre-line")
                 ]
                 [ E.html <| Html.text "Your task is to remember if the current letter matches n letters before.\n"
                 , E.html <| Html.text "Press the \"Match\" button or the spacebar if you think it's a match."
