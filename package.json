@@ -1,0 +1,24 @@
+{
+  "name": "n-back",
+  "version": "1.0.0",
+  "description": "The n-back is a continuous performance task for improving working memory.",
+  "main": "index.js",
+  "scripts": {
+    "watch": "chokidar **/*.elm -c \"elm make src/Main.elm --output dist/main.js\" --initial"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlienKevin/n-back.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AlienKevin/n-back/issues"
+  },
+  "homepage": "https://github.com/AlienKevin/n-back#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "chokidar-cli": "^2.1.0"
+  }
+}

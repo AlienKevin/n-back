@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Browser
 import Browser.Events
@@ -8,11 +8,12 @@ import Element.Background as Background
 import Element.Font as Font
 import Element.Border as Border
 import Html exposing (Html)
-import Html.Attributes
 import Random
 import Time
 import Delay
 import Json.Decode as Decode
+
+port playSound : String -> Cmd msg
 
 -- MAIN
 
@@ -107,9 +108,7 @@ update msg model =
             )
 
         ConfirmTarget ->
-            ( updateCorrects model
-            , Cmd.none
-            )
+            updateCorrects model
 
         IgnoreMessage ->
             ( model, Cmd.none )
@@ -147,15 +146,17 @@ nextTotalCorrects model history =
         model.totalCorrects
 
 
-updateCorrects : Model -> Model
+updateCorrects : Model -> (Model, Cmd Msg)
 updateCorrects model =
     if isCorrect model.history model.n then
-        { model |
+        ({ model |
             corrects = model.corrects + 1
             , bg = theme.green
         }
+        , playSound "correct"
+        )
     else
-        { model |
+        ({ model |
             corrects =
                 if model.corrects > 0 && List.length model.history > model.n then
                     model.corrects - 1
@@ -163,6 +164,8 @@ updateCorrects model =
                     model.corrects
             , bg = theme.red
         }
+        , playSound "incorrect"
+        )
 
 
 isCorrect : List Char -> Int -> Bool
