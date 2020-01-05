@@ -7,11 +7,14 @@ import Element.Input as Input
 import Element.Background as Background
 import Element.Font as Font
 import Element.Border as Border
+import Element.Events as Events
 import Html exposing (Html)
 import Random
 import Time
 import Delay
 import Json.Decode as Decode
+import FeatherIcons
+import Html.Attributes
 
 -- MAIN
 
@@ -38,6 +41,7 @@ type alias Model =
     , totalCorrects : Int
     , n : Int
     , bg : E.Color
+    , settingsOn : Bool
     }
 
 
@@ -51,6 +55,7 @@ init _ =
     , history = [ 'B' ]
     , n = 2
     , bg = theme.darker
+    , settingsOn = False
     }
     , Delay.after 500 Delay.Millisecond Pause
     )
@@ -66,6 +71,9 @@ type Msg
     | Pause
     | ConfirmTarget
     | IgnoreMessage
+    | OpenSettings
+    | CloseSettings
+    | AdjustN Float
 
 
 letters : List Char
@@ -110,8 +118,43 @@ update msg model =
             , Cmd.none
             )
 
+        OpenSettings ->
+            ( openSettings model
+            , Cmd.none
+            )
+
+        CloseSettings ->
+            ( closeSettings model
+            , Cmd.none
+            )
+
+        AdjustN newN ->
+            ( adjustN model <| round newN
+            , Cmd.none
+            )
+
         IgnoreMessage ->
             ( model, Cmd.none )
+
+
+adjustN : Model -> Int -> Model
+adjustN model newN =
+    { model |
+        n = newN
+    }
+
+openSettings : Model -> Model
+openSettings model =
+    { model |
+        settingsOn = True
+    }
+
+
+closeSettings : Model -> Model
+closeSettings model =
+    { model |
+        settingsOn = False
+    }
 
 
 nextLetter : Model -> (Model, Cmd Msg)
@@ -228,65 +271,132 @@ view model =
         [ Background.color theme.darker
         , Font.color theme.text
         , E.padding 10
+        , E.width E.fill
+        , E.inFront <|
+            if model.settingsOn then
+                settings model
+            else
+                E.none
         ] <|
-        E.column
-            [ E.spacing 20
-            , E.centerX
-            , E.height E.fill
-            ]
-            [ E.el
-                [ Font.size 100
-                , Font.bold
+        if model.settingsOn then
+            E.none
+        else
+            E.column
+                [ E.spacing 20
                 , E.centerX
-                , E.centerY
-                , E.width <| E.px 200
-                , E.height <| E.px 200
-                , Background.color model.bg
-                ] <|
-                    E.el
-                    [ E.centerX
-                    , E.centerY
+                , E.height E.fill
+                , E.width E.fill
+                ]
+                [ E.el
+                    [ E.alignRight
+                    , E.pointer
+                    , Events.onClick OpenSettings
                     ] <|
-                    E.text (
-                        if model.paused then
-                            " "
-                        else
-                            String.fromChar model.letter
-                    )
-            , let
-                disabled =
-                    List.length model.history <= model.n
-            in
-            Input.button
-                [ Background.color <|
-                    if disabled then
-                        theme.grey
-                    else
-                        theme.light
-                , E.mouseOver
+                    E.html (FeatherIcons.settings |> FeatherIcons.toHtml [])
+                , E.el
+                    [ Font.size 100
+                    , Font.bold
+                    , E.centerX
+                    , E.centerY
+                    , E.width <| E.px 200
+                    , E.height <| E.px 200
+                    , Background.color model.bg
+                    ] <|
+                        E.el
+                        [ E.centerX
+                        , E.centerY
+                        ] <|
+                        E.text (
+                            if model.paused then
+                                " "
+                            else
+                                String.fromChar model.letter
+                        )
+                , let
+                    disabled =
+                        List.length model.history <= model.n
+                in
+                Input.button
                     [ Background.color <|
                         if disabled then
                             theme.grey
                         else
-                            theme.dark
-                        ]
-                , E.padding 10
-                , Border.rounded 10
-                , E.centerY
-                , E.centerX
+                            theme.light
+                    , E.mouseOver
+                        [ Background.color <|
+                            if disabled then
+                                theme.grey
+                            else
+                                theme.dark
+                            ]
+                    , E.padding 10
+                    , Border.rounded 10
+                    , E.centerY
+                    , E.centerX
+                    ]
+                    { label = E.text "Is Target"
+                    , onPress =
+                        if disabled then
+                            Nothing
+                        else
+                            Just ConfirmTarget
+                    }
+                , E.column
+                    [ E.centerX
+                    , E.alignBottom
+                    ]
+                    [ E.text <| "#" ++ String.fromInt model.index
+                    , E.text <| "✔" ++ (String.fromInt <| round (toFloat model.corrects / toFloat model.totalCorrects * 100)) ++ "%"
+                    ]
                 ]
-                { label = E.text "Is Target"
-                , onPress =
-                    if disabled then
-                        Nothing
-                    else
-                        Just ConfirmTarget
-                }
-            , E.column
-                [ E.centerX
-                , E.alignBottom
-                ]
-                [ E.text <| "#" ++ String.fromInt model.index
-                , E.text <| "✔" ++ (String.fromInt <| round (toFloat model.corrects / toFloat model.totalCorrects * 100)) ++ "%"
-                ]
+
+
+settings : Model -> E.Element Msg
+settings model =
+    E.column
+        [ E.htmlAttribute <| Html.Attributes.style "width" "50vw"
+        , E.htmlAttribute <| Html.Attributes.style "height" "50vh"
+        , E.centerX
+        , E.centerY
+        , Background.color theme.light
+        , E.padding 20
+        , E.spacing 20
+        ]
+        [ E.el
+            [ E.alignRight
+            , E.pointer
+            , Events.onClick CloseSettings
+            ] <|
+            E.html (FeatherIcons.x |> FeatherIcons.toHtml [])
+        , E.el
+            [ Font.bold
+            ] <|
+            E.text "Settings"
+        , Input.slider
+            [ E.height (E.px 30)
+            , E.width (E.px 150)
+
+            -- Here is where we're creating/styling the "track"
+            , E.behindContent
+                (E.el
+                    [ E.width E.fill
+                    , E.height (E.px 2)
+                    , E.centerY
+                    , Background.color theme.grey
+                    , Border.rounded 2
+                    ]
+                    E.none
+                )
             ]
+            { onChange = AdjustN
+            , label =
+                Input.labelAbove []
+                    (E.text <| "n-back is " ++ String.fromInt model.n)
+            , min = 1
+            , max = 5
+            , step = Just 1
+            , value = toFloat model.n
+            , thumb =
+                Input.defaultThumb
+            }
+        ]
