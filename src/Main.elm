@@ -263,16 +263,14 @@ keyToMessage string =
 
 theme =
     { light = E.rgb255 102 121 217
-    , grey = E.rgb255 196 196 196
+    , grey = E.rgb255 161 161 161
     , dark = E.rgb255 20 69 125
     , darkPurple = E.rgb255 50 58 106
     , darkerPurple = E.rgb255 36 42 79
     , darkestPurple = E.rgb255 29 34 64
     , green = E.rgb255 124 252 0
     , red = E.rgb255 255 72 0
-    , darkGrey = E.rgb255 170 170 170
-    , darkerGrey = E.rgb255 150 150 150
-    , darkestGrey = E.rgb255 130 130 130
+    , white = E.rgb255 255 255 255
     , black = E.rgb255 74 74 74
     , text = E.rgb255 255 255 255
     }
@@ -294,7 +292,7 @@ homeView model =
         , E.padding 10
         ] <|
         E.column
-            [ E.spacing 20
+            [ E.spacing 30
             , E.centerX
             , E.width E.fill
             , E.height E.fill
@@ -321,37 +319,25 @@ homeView model =
                 , E.spacing 20
                 , E.paddingXY 0 30
                 ]
-                [ Input.button
-                    [ E.above <| E.el [ E.centerX, E.paddingXY 0 10 ] <| E.text "Easy"
-                    , E.padding 10
-                    , Background.color theme.darkPurple
-                    , E.mouseOver
-                        [ Background.color theme.darkGrey
-                        ]
+                [ button
+                    theme.darkPurple
+                    [ E.above <| E.el [ E.centerX, E.paddingXY 0 15, Font.color theme.text ] <| E.text "Easy"
                     ]
                     { onPress = Just (ChangePage <| TaskPage 1)
                     , label =
                         E.text "1-Back"
                     }
-                , Input.button
-                    [ E.above <| E.el [ E.centerX, E.paddingXY 0 10 ] <| E.text "Medium"
-                    , E.padding 10
-                    , Background.color theme.darkerPurple
-                    , E.mouseOver
-                        [ Background.color theme.darkerGrey
-                        ]
+                , button
+                    theme.darkerPurple
+                    [ E.above <| E.el [ E.centerX, E.paddingXY 0 15, Font.color theme.text ] <| E.text "Medium"
                     ]
                     { onPress = Just (ChangePage <| TaskPage 2)
                     , label =
                         E.text "2-Back"
                     }
-                , Input.button
-                    [ E.above <| E.el [ E.centerX, E.paddingXY 0 10 ] <| E.text "Hard"
-                    , E.padding 10
-                    , Background.color theme.darkestPurple
-                    , E.mouseOver
-                        [ Background.color theme.darkestGrey
-                        ]
+                , button
+                    theme.darkestPurple
+                    [ E.above <| E.el [ E.centerX, E.paddingXY 0 15, Font.color theme.text ] <| E.text "Hard"
                     ]
                     { onPress = Just (ChangePage <| TaskPage 3)
                     , label =
@@ -393,26 +379,24 @@ taskView model =
                 disabled =
                     List.length model.history <= model.n
             in
-            Input.button
-                [ Background.color <|
-                    if disabled then
-                        theme.grey
-                    else
-                        model.bg
+            button
+                (if disabled then
+                    theme.grey
+                else
+                    model.bg
+                )
+                [ E.centerY
+                , E.centerX
                 , E.mouseOver
-                    [ Background.color <|
-                        if disabled then
+                    [ Background.color
+                        ( if disabled then
                             theme.grey
                         else
-                            if model.bg == theme.light then
-                                    theme.dark
-                            else
-                                model.bg
-                        ]
-                , E.padding 10
-                , Border.rounded 10
-                , E.centerY
-                , E.centerX
+                            model.bg
+                        )
+                    , Font.color
+                        theme.text
+                    ]
                 ]
                 { label = E.text "Match"
                 , onPress =
@@ -437,3 +421,36 @@ taskView model =
                 , E.el [ E.width <| E.px 40  ] <| E.text <| "✔" ++ (String.fromInt <| round (toFloat model.corrects / toFloat model.totalCorrects * 100)) ++ "%"
                 ]
             ]
+
+
+button :
+    E.Color ->
+    List (E.Attribute msg) ->
+        { onPress : Maybe msg
+        , label : E.Element msg
+        } ->
+    E.Element msg
+button bg attributes properties =
+    let
+        lightShadowColor =
+            "rgba(255, 255, 255, 0.3)"
+        lightShadow =
+            "-4px -4px 8px " ++ lightShadowColor
+        darkShadowColor =
+            "rgba(51, 51, 51, 0.5)"
+        darkShadow =
+            "4px 4px 8px 6px " ++ darkShadowColor
+    in
+    Input.button
+        ( [ E.padding 10
+            , Border.rounded 10
+            , Background.color bg
+            , E.mouseOver
+                [ Background.color theme.white
+                , Font.color theme.black
+                ]
+            , E.htmlAttribute <| Html.Attributes.style "box-shadow" <| lightShadow ++ ", " ++ darkShadow
+            ]
+        ++ attributes
+        )
+        properties
