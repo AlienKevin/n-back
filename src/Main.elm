@@ -46,6 +46,7 @@ type alias Model =
     , n : Int
     , bg : E.Color
     , page : Page
+    , pageBg : E.Color
     }
 
 
@@ -60,6 +61,7 @@ init _ =
     , n = 2
     , bg = theme.light
     , page = HomePage
+    , pageBg = theme.black
     }
     , Delay.after 500 Delay.Millisecond Pause
     )
@@ -135,6 +137,18 @@ changePage newPage =
     in
     ({ model |
         page = newPage
+        , pageBg =
+            case newPage of
+                TaskPage n ->
+                    case n of
+                        1 ->
+                            theme.darkPurple
+                        2 ->
+                            theme.darkerPurple
+                        _ ->
+                            theme.darkestPurple
+                HomePage ->
+                    theme.black
         , n =
             case newPage of
                 TaskPage n ->
@@ -251,12 +265,11 @@ theme =
     { light = E.rgb255 102 121 217
     , grey = E.rgb255 196 196 196
     , dark = E.rgb255 20 69 125
-    , darker = E.rgb255 50 58 106
+    , darkPurple = E.rgb255 50 58 106
+    , darkerPurple = E.rgb255 36 42 79
+    , darkestPurple = E.rgb255 29 34 64
     , green = E.rgb255 124 252 0
     , red = E.rgb255 255 72 0
-    , darkRed = E.rgb255 170 0 0
-    , darkerRed = E.rgb255 150 0 0
-    , darkestRed = E.rgb255 130 0 0
     , darkGrey = E.rgb255 170 170 170
     , darkerGrey = E.rgb255 150 150 150
     , darkestGrey = E.rgb255 130 130 130
@@ -276,7 +289,7 @@ view model =
 homeView : Model -> Html Msg
 homeView model =
     E.layout
-        [ Background.color theme.black
+        [ Background.color model.pageBg
         , Font.color theme.text
         , E.padding 10
         ] <|
@@ -311,7 +324,7 @@ homeView model =
                 [ Input.button
                     [ E.above <| E.el [ E.centerX, E.paddingXY 0 10 ] <| E.text "Easy"
                     , E.padding 10
-                    , Background.color theme.darkRed
+                    , Background.color theme.darkPurple
                     , E.mouseOver
                         [ Background.color theme.darkGrey
                         ]
@@ -323,7 +336,7 @@ homeView model =
                 , Input.button
                     [ E.above <| E.el [ E.centerX, E.paddingXY 0 10 ] <| E.text "Medium"
                     , E.padding 10
-                    , Background.color theme.darkerRed
+                    , Background.color theme.darkerPurple
                     , E.mouseOver
                         [ Background.color theme.darkerGrey
                         ]
@@ -335,7 +348,7 @@ homeView model =
                 , Input.button
                     [ E.above <| E.el [ E.centerX, E.paddingXY 0 10 ] <| E.text "Hard"
                     , E.padding 10
-                    , Background.color theme.darkestRed
+                    , Background.color theme.darkestPurple
                     , E.mouseOver
                         [ Background.color theme.darkestGrey
                         ]
@@ -351,7 +364,7 @@ homeView model =
 taskView : Model -> Html Msg
 taskView model =
     E.layout
-        [ Background.color theme.darker
+        [ Background.color model.pageBg
         , Font.color theme.text
         , E.padding 20
         ] <|
